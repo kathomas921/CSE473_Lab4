@@ -73,26 +73,27 @@ public class SrcSnk implements Runnable {
 		if (delta > 0 && delta < 1000000) sleeptime = (int) delta;
 		else sleeptime = 999999;
 
-		String msg; inCount = outCount = 0;
+		String msg; 
+		inCount = outCount = 0;
 		int idleCount = 0;
 		while (!quit) {
 			now = System.nanoTime() - t0;
 			if (rdt.incoming()) {
 				msg = rdt.receive();
 				if (!msg.equals("testing " + inCount)) {
-                                        System.out.println("got: " + msg
-						+ "when expecting "
-                                                + "testing " + inCount);
-                                        System.exit(1);
+                    System.out.println("got: " + msg + "when expecting " + 
+                    	"testing " + inCount);
+                    System.exit(1);
 				}
-                                inCount++;
+                inCount++;
 				idleCount = 0;
 			} else if (now > next && now < stopTime &&
 			     	   rdt.ready() && delta > 0) {
 				// send an outgoing payload
 				msg = "testing " + outCount;
 				rdt.send(msg);
-				outCount++; next += delta;
+				outCount++; 
+				next += delta;
 				idleCount = 0;
 			} else {
 				idleCount++;
@@ -101,8 +102,7 @@ public class SrcSnk implements Runnable {
 				try {
 					Thread.sleep(0L,sleeptime);
 				} catch(Exception e) {
-					System.err.println("SrcSnk:run: "
-						+ "sleep exception " + e);
+					System.err.println("SrcSnk:run: " + "sleep exception " + e);
 					System.exit(1);
 				}
 				idleCount = 0;

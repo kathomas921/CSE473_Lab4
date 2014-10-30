@@ -33,13 +33,13 @@ public class Rdt implements Runnable {
 	private LinkedList<Short> resendList;	// their seq#s, in order of resend times
 
 	// Receiving structures and necessary information
-	private Packet[] recvBuf; // undelivered packets
-	private short recvBase = 0;  // seq# of oldest undelivered packet (to application)
-	private short expSeqNum = 0;	// seq# of packet we expect to receive (from substrate)
+	private Packet[] recvBuf;	 // undelivered packets
+	private short recvBase = 0;  // seq# of oldest undelivered packet [to app]
+	private short expSeqNum = 0; // seq# of packet expted to receive [from sub]
 	private short lastRcvd = -1; // last packet received properly
 
 	// Time keeping variabels
-	private long now = 0;		// current time (relative to t0)
+	private long now = 0; //current time, relative to t0
 	private long sendAgain = 0;	// time when oldest un-acked packet gets sent again
 
 	private Thread myThread;
@@ -82,7 +82,8 @@ public class Rdt implements Runnable {
 	 *  @return next sequence number after x
 	 */
 	private short incr(short x) {
-		x++; return (x < 2*wSize ? x : 0);
+		x++; 
+		return (x < 2*wSize ? x : 0);
 	}
 
 	/** Compute the difference between two sequence numbers,
@@ -112,29 +113,81 @@ public class Rdt implements Runnable {
 
 		while (!quit || /* we still have un-acked packets */ ) {
 			now = System.nanoTime() - t0;
+			Packet p;
+
 			// TODO
 			// if receive buffer has a packet that can be
 			//    delivered, deliver it to sink
-
+			if (recvBuf[0] !=  null ) {  //there should only ever be 1 packet 
+										 //in recvBuf because Go-Back-N doesnt 
+										 //really hold on to packets that aren't
+										 //supposed to be immediately sent to app
+			
+				toSnk.put(recvBuf[0].payload); //will wait until it can fit in queue (indefinately)
+				recvBuf[0] = null;
+				recvBase = this.incr(recvBase);
+			}
 			// else if the substrate has an incoming packet
 			//      get the packet from the substrate and process it
-			// 	if it's a data packet, ack it and add it
-			//	   to receive buffer as appropriate
-			//	if it's an ack, update the send buffer and
-			//	   related data as appropriate
-			//	   reset the timer if necessary
+			else if (sub.incoming()) {
+				p = sub.receive();
 
+				// 	if it's a data packet
+				if (p.type == 0) {
+					//send acknowledgement back to sub
+					if (p.seqNum == expSecNum) {
+						++ expSecNum;
+						++lastRcvd;
+					}
+					Packet ack = new Packet();
+					ack.type = 1;
+					ack.seqNum = lastRcvd;
+					sub.send(ack);
+
+	
+					//add to receive buffer
+					recvBuf[0] = p;
+				}
+
+				//if ack
+				else {
+
+					//update send buffer and related data as appropriate
+					if (p.seqNum == sendBase) {
+						sendBuf[sendBase] == null;
+						sendBase++;
+						sendSeqNum++;
+						dupAck = 0;
+					}
+					if (p.seqNum == (sendBase-1)) {
+						dupAck++;
+					}
+
+
+					//reset the timer if necessary
+				}	
+			}
 			// else if the resend timer has expired, re-send all
-			//      un-acked packets and reset their timers
+			// un-acked packets and reset their timers
+			else if (/*timer expired)*/) {
+
+			}
+
 
 			// else if there is a message from the source waiting
 			//      to be sent and the send window is not full
 			//	and the substrate can accept a packet
-			//      create a packet containing the message,
-			//	and send it, after updating the send buffer
-			//	and related data
+			else if () {
+				//update send buffer and related data
+
+				//create a packet containing the message and send it
+			}
 
 			// else nothing to do, so sleep for 1 ms
+			else {
+
+			}
+
 
 		}
 	}

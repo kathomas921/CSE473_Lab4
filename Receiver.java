@@ -50,7 +50,7 @@ public class Receiver implements Runnable {
 
 		Packet p;
 		byte[] buf = new byte[2000];
-                DatagramPacket dg = new DatagramPacket(buf, buf.length);
+        DatagramPacket dg = new DatagramPacket(buf, buf.length);
 
 		int rcvCount, rcvAck, discCount;
 		rcvCount = rcvAck = discCount = 0;
