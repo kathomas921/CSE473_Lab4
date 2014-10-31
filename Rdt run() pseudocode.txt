@@ -1,0 +1,37 @@
+create data packet p
+	p.secNum = next seq num
+
+send packet p
+
+	//sendAgain = now + timeout
+	resendList.add(p.seqNum) //adds packet to list of possible resends
+	resendTime[].add(now + timeout)
+
+get ack for packet p
+	while (now < sendAgain)
+		if p.seqNum == expSecNum
+			remove first entry from resendList
+			remove first entry from resendTime
+			sendAgain = resendTime[0] //oldest entry in resendTime
+			sendBase++
+			sendSeqNum++
+			dupAcks = 0
+
+		if (p.seqNum == sendBase-1)
+			sendBase packet was never received by other host
+			wait to see if sendBase's ack comes in before its timeout
+				if yes (will catch above)
+				if no (will timeout and resend)
+				dupAck++
+
+		if (p.seqNum != expSecNum && expSecNum in window)
+			assume all packets between expSecNum and p.seqNum were correctly received
+			process the contents of the first if statement x+1 times (x = diff(p.seqNum && expSecNum))
+
+		debug check:
+		if (p.seqNum not in window and != sendBase-1), unexpected error, not updating things correctly
+			
+
+	//timeout
+	resend all packets in resendList
+

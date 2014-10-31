@@ -154,10 +154,11 @@ public class Rdt implements Runnable {
 
 					//update send buffer and related data as appropriate
 					if (p.seqNum == sendBase) {
-						sendBuf[sendBase] == null;
+						//sendBuf[sendBase] == null;
 						sendBase++;
 						sendSeqNum++;
 						dupAck = 0;
+						
 					}
 					if (p.seqNum == (sendBase-1)) {
 						dupAck++;
