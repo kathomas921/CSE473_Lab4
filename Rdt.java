@@ -217,8 +217,7 @@ public class Rdt implements Runnable {
 				try {
 					Thread.sleep(1);
 				} catch(Exception e) {
-					System.err.println("Rdt:run: "
-						+ "sleep exception " + e);
+					System.err.println("Rdt:run: sleep exception " + e);
 					System.exit(1);
 				}
 			}
