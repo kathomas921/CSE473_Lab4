@@ -118,13 +118,13 @@ public class Rdt implements Runnable {
 			// TODO
 			// if receive buffer has a packet that can be
 			//    delivered, deliver it to sink
-			if (recvBuf[0] !=  null ) {  //there should only ever be 1 packet 
+			if (recvBuf[recvBase] !=  null ) {  //there should only ever be 1 packet 
 										 //in recvBuf because Go-Back-N doesnt 
 										 //really hold on to packets that aren't
 										 //supposed to be immediately sent to app
-			
-				toSnk.put(recvBuf[0].payload); //will wait until it can fit in queue (indefinately)
-				recvBuf[0] = null;
+				p = recvBuf[recvBase];
+				toSnk.put(p.payload); //will wait until it can fit in queue (indefinately)
+				recvBuf[recvBase] = null;
 				recvBase = this.incr(recvBase);
 			}
 			// else if the substrate has an incoming packet
@@ -136,8 +136,8 @@ public class Rdt implements Runnable {
 				if (p.type == 0) {
 					//send acknowledgement back to sub
 					if (p.seqNum == expSecNum) {
-						++ expSecNum;
-						++lastRcvd;
+						this.incr(expSecNum);
+						this.incr(lastRcvd);
 					}
 					Packet ack = new Packet();
 					ack.type = 1;
@@ -146,24 +146,48 @@ public class Rdt implements Runnable {
 
 	
 					//add to receive buffer
-					recvBuf[0] = p;
+					recvBuf[recvBase] = p;
 				}
 
 				//if ack
 				else {
+					while (now < sendAgain) {
+						if (p.seqNum == expSecNum) {		
+							resendList.remove(); //remove oldest entry from resentList	
+							resendTime[sendBase] = null; //essentially clear oldest entry from resentTime array
+							sendBuf[sendBase] = null; //essentially remove received packet from unacked sent packet array
+							this.incr(sendBase);
+							this.incr(sendSeqNum);
+							sendAgain = resendTime[sendBase]; //set to oldest packet's resentTime
+							dupAck = 0;
+						}
+						if (p.seqNum == sendBase-1) {
+							//wait to see if sendBase's ack comes in before its timeout
+							dupAck++;
+							if (dupAck ==3) break; //break from loop, resend all unacked packets
+						}
+
+						if ((p.seqNum != expSecNum) && (diff(p.seqNum,sendBase) < wSize)) {
+							//assume all packets between expSecNum and p.seqNum were correctly received
+							//process conents of the first "if" statement x+1 times
+							//where x+1 = diff(p.seqNum, expSecNum)
+							int numUpdates = diff(p.seqNum,expSecNum) + 1;
+							for (int x = 1, x <=numUpdates, ++x) {
+								resendList.remove();
+								resendTime[sendBase] = null; 
+								this.incr(sendBase);
+								this.incr(sendSeqNum);
+								sendAgain = resendTime[sendBase];
+								dupAck = 0;						
+							}
+
+						}
+						//debug check
+						//if (p.seqNum )
+					}
+					//timeout
 
 					//update send buffer and related data as appropriate
-					if (p.seqNum == sendBase) {
-						//sendBuf[sendBase] == null;
-						sendBase++;
-						sendSeqNum++;
-						dupAck = 0;
-						
-					}
-					if (p.seqNum == (sendBase-1)) {
-						dupAck++;
-					}
-
 
 					//reset the timer if necessary
 				}	
@@ -186,7 +210,7 @@ public class Rdt implements Runnable {
 
 			// else nothing to do, so sleep for 1 ms
 			else {
-
+                Thread.sleep(0.001);
 			}
 
 
