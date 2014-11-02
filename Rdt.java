@@ -108,84 +108,127 @@ public class Rdt implements Runnable {
 	 *  window protocol with the go-back-N feature.
 	 */
 	public void run() {
+		//System.out.println("Enter run()");
 		long t0 = System.nanoTime();
 		long now = 0;		// current time (relative to t0)
 
 		while (!quit || resendList.size() != 0) {
+			////System.out.println("In while loop");
+
 			now = System.nanoTime() - t0;
+			sendAgain = now + timeout;
 			Packet p = new Packet();
 
 			// TODO
 			// if receive buffer has a packet that can be
 			//    delivered, deliver it to sink
 			if (recvBuf[recvBase] !=  null) { 
-				p = recvBuf[recvBase];
+				//p = recvBuf[recvBase];
+				p.type = recvBuf[recvBase].type;
+				p.seqNum = recvBuf[recvBase].seqNum;
+				p.payload = recvBuf[recvBase].payload;
 				toSnk.add(p.payload);
 				recvBuf[recvBase] = null;
-				recvBase = this.incr(recvBase);
+				recvBase = incr(recvBase);
+				System.out.println("packet " + p.seqNum + " sent to sink");
 			}
 			// else if the substrate has an incoming packet
 			//      get the packet from the substrate and process it
 			else if (sub.incoming()) {
+				//System.out.println("Incoming packet from sub");
 				p = sub.receive();
+				
+				System.out.println("p.seqNum: " + p.seqNum + ", p.payload: " + 
+					p.payload + ", p.type: " + p.type);
 
 				// 	if it's a data packet
 				if (p.type == 0) {
+					//System.out.println("Received data packet");
 					//if expected packet, add to recv buffer and update info
 					if (p.seqNum == expSeqNum) {
 						recvBuf[recvBase] = p;
-						this.incr(recvBase);
-						this.incr(expSeqNum);
-						this.incr(lastRcvd);
+						// recvBuf[recvBase].type = p.type;
+						// recvBuf[recvBase].seqNum = p.seqNum;
+						// recvBuf[recvBase].payload = "";
+						System.out.println("p.seqNum: " + p.seqNum);
+						System.out.println("recvBuf[recvBase]: " + recvBuf[recvBase].seqNum);
+						recvBase = incr(recvBase);
+						System.out.println("expSeqNum: " + expSeqNum);
+						expSeqNum = incr(expSeqNum);
+						System.out.println("expSeqNum after incr: " + expSeqNum);
+						lastRcvd = incr(lastRcvd);
 					}
 					//send ack back to sub
 					Packet ack = new Packet();
 					ack.type = 1;
 					ack.seqNum = lastRcvd;
 					sub.send(ack);
+					//System.out.println("Sent ack packet");
 				}
 
 				//if ack
 				else if (now < sendAgain) {
+				//System.out.println("Received ack packet");
+
 					//while (now < sendAgain) {
-					if (p.seqNum == expSeqNum) {		
+					if (p.seqNum == expSeqNum) {	
+						//System.out.println("Received expected ack packet");
+	
 						resendList.remove(); //remove oldest (first) entry from resentList	
+						//running into nullptr exception (probably when there are no more packets to send)
+						//what do I set resendTime[sendBase] to?  0? now?
 						resendTime[sendBase] = null; //essentially clear oldest entry from resentTime array
 						sendBuf[sendBase] = null; //essentially remove received packet from unacked sent packet array
-						this.incr(sendBase);
-						this.incr(sendSeqNum);
-						sendAgain = resendTime[sendBase]; //set to oldest packet's resentTime
+						sendBase = incr(sendBase);
+						sendSeqNum = incr(sendSeqNum);	
 						dupAcks = 0;
+						// if (resendTime[sendBase] != null) {
+						// 	sendAgain = resendTime[sendBase]; //set to oldest packet's resentTime
+						// }
+						// else {
+						// 	sendAgain = now + timeout;
+						// }
+						sendAgain = resendTime[sendBase];
 					}
-					if (p.seqNum == sendBase-1) {
-						dupAcks++;
-						//resend immediately (in next else if block) by ensuring now > sendAgain
-						if (dupAcks == 3) sendAgain = 0;
-							
-					}
+
 					//not expected seq num, but within window
 					if ((p.seqNum != expSeqNum) && (diff(p.seqNum,sendBase) < wSize)) {
 						//assume all packets between expSeqNum and p.seqNum were correctly received
 						//process conents of the first "if" statement x+1 times
 						//where x+1 = diff(p.seqNum, expSeqNum)
+						//System.out.println("Received unexpected ack packet but in window");
+
 						int numUpdates = diff(p.seqNum,expSeqNum) + 1;
 						for (int x = 1; x <=numUpdates; ++x) {
 							resendList.remove();
-							resendTime[sendBase] = null; 
+							resendTime[sendBase] = 0; 
 							sendBuf[sendBase] = null;
-							this.incr(sendBase);
-							this.incr(sendSeqNum);
+							sendBase = incr(sendBase);
+							sendSeqNum = incr(sendSeqNum);
 							sendAgain = resendTime[sendBase];
 							dupAcks = 0;						
 						}
+					}
+					//if seq num == sendBase-1 (with handled wrap around)
+					if (p.seqNum == diff(sendBase, (short)(wSize+1))) {
+						//System.out.println("Received duplicate ack packet");
+					
+						dupAcks++;
+						//resend immediately (in next else if block) by ensuring now > sendAgain
+						if (dupAcks == 3) sendAgain = 0;
+							
 					}
 				}	
 			}
 			// else if the resend timer has expired, re-send all
 			// 		un-acked packets and reset their timers
 			else if (now > sendAgain && sub.ready()) {
+				//System.out.println("Timeout occured, resend all unacked packets");
+
 				while (resendList.size() != 0) {
-					short curSeqNum = resendList.pop(); //seq# of packet (remove item from resendList)
+					//System.out.println("Timeout occured, resent packet");
+
+					short curSeqNum = resendList.poll(); //seq# of packet (remove item from resendList)
 					sub.send(sendBuf[curSeqNum]); //resend packet = sendBuf[curSeqNum]
 					resendTime[curSeqNum] = now + timeout; //reset timeout
 					dupAcks = 0;
@@ -198,6 +241,8 @@ public class Rdt implements Runnable {
 			//		and the substrate can accept a packet
 			else if ((fromSrc.size() !=0) && 
 				(diff(sendSeqNum,sendBase) < wSize) && sub.ready()) {
+				//System.out.println("Msg from src ready to be sent");
+			
 				//create a packet containing the message and send it
 				Packet dataPkt = new Packet();
 				dataPkt.payload = fromSrc.poll();
@@ -209,7 +254,7 @@ public class Rdt implements Runnable {
 				sendBuf[dataPkt.seqNum] = dataPkt;
 				resendTime[dataPkt.seqNum] = now + timeout;
 				resendList.add(dataPkt.seqNum);
-				this.incr(sendSeqNum);
+				sendSeqNum = incr(sendSeqNum);
 			}
 
 			// else nothing to do, so sleep for 1 ms
