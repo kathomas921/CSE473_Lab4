@@ -107,8 +107,10 @@ public class Rdt implements Runnable {
 		//System.out.println("Enter run()");
 		long t0 = System.nanoTime();
 		long now = 0;		// current time (relative to t0)
+		int numUnacked = 0;
 
-		while (!quit || resendList.size() > 0) {
+		while (!quit || numUnacked != 0) {
+
 			////System.out.println("In while loop");
 
 			now = System.nanoTime() - t0;
@@ -149,7 +151,7 @@ public class Rdt implements Runnable {
 					Packet ack = new Packet();
 					ack.type = 1;
 					ack.seqNum = lastRcvd;
-					System.out.println("lastRcvd: " + lastRcvd + "ack.seqNum: " + ack.seqNum);
+					System.out.println("lastRcvd: " + lastRcvd + ", ack.seqNum: " + ack.seqNum);
 					sub.send(ack);
 					//System.out.println("Sent ack packet");
 				}
@@ -159,20 +161,23 @@ public class Rdt implements Runnable {
 				else if (now <= sendAgain) {
 					System.out.println("Received ack packet: p.type: " + p.type + ", p.payload: " + 
 						p.payload + ", p.seqNum: " + p.seqNum + ", expSeqNum: " + expSeqNum);
-					System.out.println("	now: " + now + ", sendAgain: " + sendAgain);
 
 					//if ack seq num within window
-					if ( diff(expSeqNum, sendBase) < diff(p.seqNum, sendBase)) {
+					if ( diff(p.seqNum, sendBase) < wSize) {
 					//if ((diff(p.seqNum,sendBase) < wSize) && diff(p.seqNum,expSeqNum)  >= 0 ) {
 						/*assume all packets between expSeqNum and p.seqNum were correctly received
 						//process conents of the first "if" statement x+1 times
-						//where x+1 = diff(p.seqNum, expSeqNum)
-						//System.out.println("Received unexpected ack packet but in window"); */
+						//where x+1 = diff(p.seqNum, expSeqNum)*/
+						 
 
 						int numUpdates = (diff(p.seqNum,expSeqNum) + 1);
+						System.out.println("Received ack in window., processing " + numUpdates + " packets as received.");
 						for (int x = 0; x < numUpdates; ++x) {
 							sendBuf[sendBase] = null;
-							sendBase = incr(sendBase);				
+							--numUnacked;
+							System.out.println("dec Unacked: " + numUnacked);
+							sendBase = incr(sendBase);		
+							expSeqNum = incr(expSeqNum);		
 							dupAcks = 0;
 						}
 					}
@@ -219,6 +224,9 @@ public class Rdt implements Runnable {
 				sub.send(data);
 
 				//update send buffer and related data
+				++numUnacked;
+				System.out.println("incr Unacked: " + numUnacked);
+
 				sendBuf[data.seqNum] = data;	
 				sendSeqNum = incr(sendSeqNum);
 				sendAgain = now + timeout;
