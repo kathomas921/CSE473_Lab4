@@ -36,7 +36,7 @@ public class Substrate {
 			sock.setSoTimeout(100);
 			sock.setReceiveBufferSize(1000000);
 		} catch(Exception e) {
-			System.out.println("unable to create socket");
+			System.out.println("unable to create socket: " + e);
 			System.exit(1);
 		}
 
@@ -59,7 +59,11 @@ public class Substrate {
 	 *  @return true if substrate is ready
 	 */
 	public boolean ready() { return sndr.ready(); }
-
+	
+	/**Test is substrate is ready to receive x more packets.
+	*  @return true if substrate is ready
+	*/
+	public boolean readyX(int x) { return sndr.readyX(x); }
 	/** Retrieve the next packet from the substrate.
 	 *  @return the next incoming packet
 	 */

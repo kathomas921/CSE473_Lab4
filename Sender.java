@@ -139,4 +139,8 @@ public class Sender implements Runnable {
 
 	/** Return true if ready to accept another packet. */
 	public boolean ready() { return sendq.remainingCapacity() > 0; }
+
+	/** Return true is ready to accept x packets/ */
+	public boolean readyX(int x) { return sendq.remainingCapacity() > x; }
+
 }

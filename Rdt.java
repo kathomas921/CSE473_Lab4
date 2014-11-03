@@ -26,21 +26,19 @@ public class Rdt implements Runnable {
 
 	// Sending structures and necessary information
 	private Packet[] sendBuf; // not yet acked packets
-	private Long[] resendTime; // their resend times 	
 	private short sendBase = 0;	// seq# of first packet in send window
 	private short sendSeqNum = 0;	// next seq# after send window
 	private short dupAcks = 0; // should only happen for sendBase-1 packet
-	private LinkedList<Short> resendList;	// their seq#s, in order of resend times
 
 	// Receiving structures and necessary information
-	private Packet[] recvBuf;	 // undelivered packets
-	private short recvBase = 0;  // seq# of oldest undelivered packet [to app]
-	private short expSeqNum = 0; // seq# of packet expted to receive [from sub]
+	private Packet[] recvBuf; // undelivered packets
+	private short recvBase = 0;  // seq# of oldest undelivered packet (to application)
+	private short expSeqNum = 0;	// seq# of packet we expect to receive (from substrate)
 	private short lastRcvd = -1; // last packet received properly
 
 	// Time keeping variabels
-	private long now = 0; //current time, relative to t0
-	private long sendAgain = 0;	// time when oldest un-acked packet gets sent again
+	private long now = 0;		// current time (relative to t0)
+	private long sendAgain = 0;	// time when we send all unacked packets
 
 	private Thread myThread;
 	private boolean quit;
@@ -64,8 +62,6 @@ public class Rdt implements Runnable {
 		quit = false;
 
 		sendBuf = new Packet[2*wSize];
-		resendList = new LinkedList<Short>();	
-		resendTime = new Long[2*wSize];
 		recvBuf = new Packet[2*wSize];
 	}
 
@@ -112,7 +108,7 @@ public class Rdt implements Runnable {
 		long t0 = System.nanoTime();
 		long now = 0;		// current time (relative to t0)
 
-		while (!quit || resendList.size() != 0) {
+		while (!quit || resendList.size() > 0) {
 			////System.out.println("In while loop");
 
 			now = System.nanoTime() - t0;
@@ -122,11 +118,8 @@ public class Rdt implements Runnable {
 			// TODO
 			// if receive buffer has a packet that can be
 			//    delivered, deliver it to sink
-			if (recvBuf[recvBase] !=  null) { 
-				//p = recvBuf[recvBase];
-				p.type = recvBuf[recvBase].type;
-				p.seqNum = recvBuf[recvBase].seqNum;
-				p.payload = recvBuf[recvBase].payload;
+			if (recvBuf[recvBase] !=  null) { //FIXME Are we always necessarily checking this location?
+				p = recvBuf[recvBase];
 				toSnk.add(p.payload);
 				recvBuf[recvBase] = null;
 				recvBase = incr(recvBase);
@@ -138,75 +131,49 @@ public class Rdt implements Runnable {
 				//System.out.println("Incoming packet from sub");
 				p = sub.receive();
 				
-				System.out.println("p.seqNum: " + p.seqNum + ", p.payload: " + 
-					p.payload + ", p.type: " + p.type);
+			
 
 				// 	if it's a data packet
 				if (p.type == 0) {
-					//System.out.println("Received data packet");
+					System.out.println("Received data packet: p.type: " + p.type + ", p.payload: " + 
+					p.payload + ", p.seqNum: " + p.seqNum + ", expSeqNum: " + expSeqNum);
+
 					//if expected packet, add to recv buffer and update info
 					if (p.seqNum == expSeqNum) {
 						recvBuf[recvBase] = p;
-						// recvBuf[recvBase].type = p.type;
-						// recvBuf[recvBase].seqNum = p.seqNum;
-						// recvBuf[recvBase].payload = "";
-						System.out.println("p.seqNum: " + p.seqNum);
-						System.out.println("recvBuf[recvBase]: " + recvBuf[recvBase].seqNum);
-						recvBase = incr(recvBase);
-						System.out.println("expSeqNum: " + expSeqNum);
+						//recvBase = incr(recvBase);
 						expSeqNum = incr(expSeqNum);
-						System.out.println("expSeqNum after incr: " + expSeqNum);
 						lastRcvd = incr(lastRcvd);
 					}
 					//send ack back to sub
 					Packet ack = new Packet();
 					ack.type = 1;
 					ack.seqNum = lastRcvd;
+					System.out.println("lastRcvd: " + lastRcvd + "ack.seqNum: " + ack.seqNum);
 					sub.send(ack);
 					//System.out.println("Sent ack packet");
 				}
 
 				//if ack
-				else if (now < sendAgain) {
-				//System.out.println("Received ack packet");
+				//else if (diff(p.seqNum,sendBase) < diff(sendSeqNum, sendBase) && sendBuf[p.seqNum] != null)
+				else if (now <= sendAgain) {
+					System.out.println("Received ack packet: p.type: " + p.type + ", p.payload: " + 
+						p.payload + ", p.seqNum: " + p.seqNum + ", expSeqNum: " + expSeqNum);
+					System.out.println("	now: " + now + ", sendAgain: " + sendAgain);
 
-					//while (now < sendAgain) {
-					if (p.seqNum == expSeqNum) {	
-						//System.out.println("Received expected ack packet");
-	
-						resendList.remove(); //remove oldest (first) entry from resentList	
-						//running into nullptr exception (probably when there are no more packets to send)
-						//what do I set resendTime[sendBase] to?  0? now?
-						resendTime[sendBase] = null; //essentially clear oldest entry from resentTime array
-						sendBuf[sendBase] = null; //essentially remove received packet from unacked sent packet array
-						sendBase = incr(sendBase);
-						sendSeqNum = incr(sendSeqNum);	
-						dupAcks = 0;
-						// if (resendTime[sendBase] != null) {
-						// 	sendAgain = resendTime[sendBase]; //set to oldest packet's resentTime
-						// }
-						// else {
-						// 	sendAgain = now + timeout;
-						// }
-						sendAgain = resendTime[sendBase];
-					}
-
-					//not expected seq num, but within window
-					if ((p.seqNum != expSeqNum) && (diff(p.seqNum,sendBase) < wSize)) {
-						//assume all packets between expSeqNum and p.seqNum were correctly received
+					//if ack seq num within window
+					if ( diff(expSeqNum, sendBase) < diff(p.seqNum, sendBase)) {
+					//if ((diff(p.seqNum,sendBase) < wSize) && diff(p.seqNum,expSeqNum)  >= 0 ) {
+						/*assume all packets between expSeqNum and p.seqNum were correctly received
 						//process conents of the first "if" statement x+1 times
 						//where x+1 = diff(p.seqNum, expSeqNum)
-						//System.out.println("Received unexpected ack packet but in window");
+						//System.out.println("Received unexpected ack packet but in window"); */
 
-						int numUpdates = diff(p.seqNum,expSeqNum) + 1;
-						for (int x = 1; x <=numUpdates; ++x) {
-							resendList.remove();
-							resendTime[sendBase] = 0; 
+						int numUpdates = (diff(p.seqNum,expSeqNum) + 1);
+						for (int x = 0; x < numUpdates; ++x) {
 							sendBuf[sendBase] = null;
-							sendBase = incr(sendBase);
-							sendSeqNum = incr(sendSeqNum);
-							sendAgain = resendTime[sendBase];
-							dupAcks = 0;						
+							sendBase = incr(sendBase);				
+							dupAcks = 0;
 						}
 					}
 					//if seq num == sendBase-1 (with handled wrap around)
@@ -214,25 +181,26 @@ public class Rdt implements Runnable {
 						//System.out.println("Received duplicate ack packet");
 					
 						dupAcks++;
+						System.out.println("	Duplicate Ack # " + dupAcks);
 						//resend immediately (in next else if block) by ensuring now > sendAgain
-						if (dupAcks == 3) sendAgain = 0;
-							
+						if (dupAcks == 3) { 
+							sendAgain = 0;
+							dupAcks = 0;
+						}
 					}
 				}	
 			}
 			// else if the resend timer has expired, re-send all
 			// 		un-acked packets and reset their timers
-			else if (now > sendAgain && sub.ready()) {
-				//System.out.println("Timeout occured, resend all unacked packets");
-
-				while (resendList.size() != 0) {
-					//System.out.println("Timeout occured, resent packet");
-
-					short curSeqNum = resendList.poll(); //seq# of packet (remove item from resendList)
-					sub.send(sendBuf[curSeqNum]); //resend packet = sendBuf[curSeqNum]
-					resendTime[curSeqNum] = now + timeout; //reset timeout
-					dupAcks = 0;
+			else if (now > sendAgain) {
+				int resendP = sendSeqNum - sendBase; //=num of packets to resend
+				while (sub.readyX(resendP)) {
+					for (int i = sendBase; i < sendSeqNum; ++i) {
+						sub.send(sendBuf[sendBase]);
+						sendAgain = now + timeout;
+					}
 				}
+				
 			}
 
 
@@ -244,17 +212,16 @@ public class Rdt implements Runnable {
 				//System.out.println("Msg from src ready to be sent");
 			
 				//create a packet containing the message and send it
-				Packet dataPkt = new Packet();
-				dataPkt.payload = fromSrc.poll();
-				dataPkt.type = 0;
-				dataPkt.seqNum = sendSeqNum;
-				sub.send(dataPkt);
+				Packet data = new Packet();
+				data.type = 0;
+				data.seqNum = sendSeqNum;
+				data.payload = fromSrc.poll();
+				sub.send(data);
 
 				//update send buffer and related data
-				sendBuf[dataPkt.seqNum] = dataPkt;
-				resendTime[dataPkt.seqNum] = now + timeout;
-				resendList.add(dataPkt.seqNum);
+				sendBuf[data.seqNum] = data;	
 				sendSeqNum = incr(sendSeqNum);
+				sendAgain = now + timeout;
 			}
 
 			// else nothing to do, so sleep for 1 ms
