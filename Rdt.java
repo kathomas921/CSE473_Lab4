@@ -42,6 +42,7 @@ public class Rdt implements Runnable {
 
 	private Thread myThread;
 	private boolean quit;
+	private boolean timerOn = false;
 
 	/** Initialize a new Rdt object.
 	 *  @param wSize is the window size used by protocol; the sequence #
@@ -106,15 +107,23 @@ public class Rdt implements Runnable {
 	public void run() {
 		//System.out.println("Enter run()");
 		long t0 = System.nanoTime();
-		long now = 0;		// current time (relative to t0)
+		//long now = 0;		// current time (relative to t0)
 		int numUnacked = 0;
+		sendAgain = timeout;
 
 		while (!quit || numUnacked != 0) {
 
 			////System.out.println("In while loop");
+			long oldNow = now;
+			if(timerOn){
+				now = System.nanoTime() - t0;
+				sendAgain = now + timeout;
+				//System.out.println("	now: " + now + ", sendAgain: " + sendAgain);
 
-			now = System.nanoTime() - t0;
-			sendAgain = now + timeout;
+				//System.out.println("	Now updates from " + oldNow + " to " + now);
+
+			}
+			//sendAgain = now + timeout;
 			Packet p = new Packet();
 
 			// TODO
@@ -125,19 +134,25 @@ public class Rdt implements Runnable {
 				toSnk.add(p.payload);
 				recvBuf[recvBase] = null;
 				recvBase = incr(recvBase);
-				System.out.println("packet " + p.seqNum + " sent to sink");
+				System.out.println("	packet " + p.seqNum + " sent to sink");
 			}
+
+			else if (dupAcks == 3) {
+				resend(now);
+			}
+
 			// else if the substrate has an incoming packet
 			//      get the packet from the substrate and process it
+			
 			else if (sub.incoming()) {
 				//System.out.println("Incoming packet from sub");
 				p = sub.receive();
-				
+				//System.out.println("	now: " + now + ", sendAgain: " + sendAgain);
 			
 
 				// 	if it's a data packet
 				if (p.type == 0) {
-					System.out.println("Received data packet: p.type: " + p.type + ", p.payload: " + 
+					System.out.println("	Received data packet: p.type: " + p.type + ", p.payload: " + 
 					p.payload + ", p.seqNum: " + p.seqNum + ", expSeqNum: " + expSeqNum);
 
 					//if expected packet, add to recv buffer and update info
@@ -146,67 +161,65 @@ public class Rdt implements Runnable {
 						//recvBase = incr(recvBase);
 						expSeqNum = incr(expSeqNum);
 						lastRcvd = incr(lastRcvd);
+
 					}
-					//send ack back to sub
-					Packet ack = new Packet();
-					ack.type = 1;
-					ack.seqNum = lastRcvd;
-					System.out.println("lastRcvd: " + lastRcvd + ", ack.seqNum: " + ack.seqNum);
-					sub.send(ack);
-					//System.out.println("Sent ack packet");
+					//send ack back to sub only if rcvd >=0
+					if(lastRcvd >= 0){
+						Packet ack = new Packet();
+						ack.type = 1;
+						ack.seqNum = lastRcvd;
+						System.out.println("	lastRcvd: " + lastRcvd + ", ack.seqNum: " + ack.seqNum);
+						sub.send(ack);
+					}
 				}
+
 
 				//if ack
 				//else if (diff(p.seqNum,sendBase) < diff(sendSeqNum, sendBase) && sendBuf[p.seqNum] != null)
 				else if (now <= sendAgain) {
-					System.out.println("Received ack packet: p.type: " + p.type + ", p.payload: " + 
+					System.out.println("	Received ack packet: p.type: " + p.type + ", p.payload: " + 
 						p.payload + ", p.seqNum: " + p.seqNum + ", expSeqNum: " + expSeqNum);
 
+					//if seq num == sendBase-1 (with handled wrap around)
+					if (p.seqNum == diff(sendBase, (short)1)) {
+						//System.out.println("Received duplicate ack packet");			
+						dupAcks++;
+						System.out.println("		Duplicate Ack # " + dupAcks);
+					}
 					//if ack seq num within window
-					if ( diff(p.seqNum, sendBase) < wSize) {
+					//else if (diff(p.seqNum, sendBase) < diff(sendSeqNum,sendBase)) { //window size
+					else if (diff(p.seqNum, sendBase) < wSize) {	
 					//if ((diff(p.seqNum,sendBase) < wSize) && diff(p.seqNum,expSeqNum)  >= 0 ) {
 						/*assume all packets between expSeqNum and p.seqNum were correctly received
 						//process conents of the first "if" statement x+1 times
 						//where x+1 = diff(p.seqNum, expSeqNum)*/
-						 
+						
+						//Stop the timer
+						timerOn = false;
 
-						int numUpdates = (diff(p.seqNum,expSeqNum) + 1);
-						System.out.println("Received ack in window., processing " + numUpdates + " packets as received.");
+						int numUpdates = (diff(p.seqNum,sendBase) + 1);
+						System.out.println("	Received ack in window., processing " + 
+							numUpdates + " packets as received from sendBase " + sendBase + 
+							" to p.seqNum " + p.seqNum);
 						for (int x = 0; x < numUpdates; ++x) {
 							sendBuf[sendBase] = null;
 							--numUnacked;
-							System.out.println("dec Unacked: " + numUnacked);
+							System.out.println("	dec Unacked: " + numUnacked);
 							sendBase = incr(sendBase);		
 							expSeqNum = incr(expSeqNum);		
 							dupAcks = 0;
 						}
 					}
-					//if seq num == sendBase-1 (with handled wrap around)
-					if (p.seqNum == diff(sendBase, (short)(wSize+1))) {
-						//System.out.println("Received duplicate ack packet");
-					
-						dupAcks++;
-						System.out.println("	Duplicate Ack # " + dupAcks);
-						//resend immediately (in next else if block) by ensuring now > sendAgain
-						if (dupAcks == 3) { 
-							sendAgain = 0;
-							dupAcks = 0;
-						}
-					}
+
 				}	
 			}
-			// else if the resend timer has expired, re-send all
-			// 		un-acked packets and reset their timers
-			else if (now > sendAgain) {
-				int resendP = sendSeqNum - sendBase; //=num of packets to resend
-				while (sub.readyX(resendP)) {
-					for (int i = sendBase; i < sendSeqNum; ++i) {
-						sub.send(sendBuf[sendBase]);
-						sendAgain = now + timeout;
-					}
-				}
-				
+			// else if the resend timer has expired,
+			// re-send all un-acked packets and reset their timers
+			else if (now > sendAgain) { 
+				System.out.println("	Timeout occured: resend packets in sendBuf.");
+				resend(now);	
 			}
+
 
 
 			// else if there is a message from the source waiting to be sent 
@@ -214,7 +227,10 @@ public class Rdt implements Runnable {
 			//		and the substrate can accept a packet
 			else if ((fromSrc.size() !=0) && 
 				(diff(sendSeqNum,sendBase) < wSize) && sub.ready()) {
-				//System.out.println("Msg from src ready to be sent");
+
+				System.out.println("");
+				System.out.println("	Msg from src ready to be sent: " + fromSrc.peek());
+
 			
 				//create a packet containing the message and send it
 				Packet data = new Packet();
@@ -225,11 +241,20 @@ public class Rdt implements Runnable {
 
 				//update send buffer and related data
 				++numUnacked;
-				System.out.println("incr Unacked: " + numUnacked);
-
+				System.out.println("	incr Unacked: " + numUnacked);
 				sendBuf[data.seqNum] = data;	
 				sendSeqNum = incr(sendSeqNum);
-				sendAgain = now + timeout;
+				//sendAgain = now + timeout;
+
+				//start timer
+				timerOn = true;
+
+				if (fromSrc.size() != 0) {
+					System.out.println("	still items in source.");
+				}
+				else {
+					System.out.println("	fromSrc is now empty.");
+				}
 			}
 
 			// else nothing to do, so sleep for 1 ms
@@ -242,6 +267,35 @@ public class Rdt implements Runnable {
 				}
 			}
 		}
+		System.out.println("End of while loop: quit = " + quit + ", numUnacked = " + numUnacked);
+	}
+
+
+	public void resend(long now) {
+		int numResend = diff(sendSeqNum, sendBase); //=num of packets to resend
+		
+		System.out.println("	Before Resend: Now: " + now + ", SendAgain: " + sendAgain);		
+
+		System.out.println("	Begin resending " + numResend + " packets from sendBase: "
+					+ sendBase + " to sendSeqNum: " + sendSeqNum);
+		
+		while (!sub.readyX(numResend)) { //do nothing until ready
+			try {
+				Thread.sleep(0,1);
+			} catch(Exception e) {
+				System.err.println("Rdt:run: sleep exception " + e);
+				System.exit(1);
+			}
+		} 
+
+		for (int i = sendBase; i < sendSeqNum; ++i) {
+			sub.send(sendBuf[i]);
+			System.out.println("	resent packet " + i);
+		}
+
+		timerOn = true;
+		System.out.println("	After Resend: Now: " + now + ", SendAgain: " + sendAgain);		
+
 	}
 
 	/** Send a message to peer.
@@ -279,4 +333,6 @@ public class Rdt implements Runnable {
 	 *  @return true if there is an incoming message
 	 */
 	public boolean incoming() { return toSnk.size() > 0; }
+
+
 }
