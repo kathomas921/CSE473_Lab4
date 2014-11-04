@@ -81,7 +81,7 @@ public class SrcSnk implements Runnable {
 			if (rdt.incoming()) {
 				msg = rdt.receive();
 				if (!msg.equals("testing " + inCount)) {
-                    System.out.println("got: " + msg + "when expecting " + 
+                    System.out.println("got: " + msg + " when expecting " + 
                     	"testing " + inCount);
                     System.exit(1);
 				}

@@ -107,19 +107,27 @@ public class Rdt implements Runnable {
 	public void run() {
 		//System.out.println("Enter run()");
 		long t0 = System.nanoTime();
-		//long now = 0;		// current time (relative to t0)
+		long now = 0;		// current time (relative to t0)
 		int numUnacked = 0;
 		sendAgain = timeout;
 
 		while (!quit || numUnacked != 0) {
 
 			////System.out.println("In while loop");
-			long oldNow = now;
+			
 			if(timerOn){
-				now = System.nanoTime() - t0;
-				sendAgain = now + timeout;
+				if (now == 0) {
+					now = System.nanoTime() - t0;
+					sendAgain = now + timeout;
+				}
+				else {
+					now = System.nanoTime() - t0;
+				}
+	
 				//System.out.println("	now: " + now + ", sendAgain: " + sendAgain);
-
+				if (sendAgain < now) {
+					System.out.println("exceeded timer.");
+				}
 				//System.out.println("	Now updates from " + oldNow + " to " + now);
 
 			}
@@ -134,10 +142,11 @@ public class Rdt implements Runnable {
 				toSnk.add(p.payload);
 				recvBuf[recvBase] = null;
 				recvBase = incr(recvBase);
-				System.out.println("	packet " + p.seqNum + " sent to sink");
+				System.out.println("	packet " + p.seqNum + " sent to sink.");
 			}
 
 			else if (dupAcks == 3) {
+				System.out.println("Duplicate Acks == 3, resend packets.");
 				resend(now);
 			}
 
@@ -145,30 +154,25 @@ public class Rdt implements Runnable {
 			//      get the packet from the substrate and process it
 			
 			else if (sub.incoming()) {
-				//System.out.println("Incoming packet from sub");
-				p = sub.receive();
-				//System.out.println("	now: " + now + ", sendAgain: " + sendAgain);
-			
+				p = sub.receive();			
 
 				// 	if it's a data packet
 				if (p.type == 0) {
-					System.out.println("	Received data packet: p.type: " + p.type + ", p.payload: " + 
+					System.out.println("	Received data packet: p.payload: " + 
 					p.payload + ", p.seqNum: " + p.seqNum + ", expSeqNum: " + expSeqNum);
 
 					//if expected packet, add to recv buffer and update info
 					if (p.seqNum == expSeqNum) {
 						recvBuf[recvBase] = p;
-						//recvBase = incr(recvBase);
 						expSeqNum = incr(expSeqNum);
-						lastRcvd = incr(lastRcvd);
-
+						lastRcvd = p.seqNum;
 					}
+
 					//send ack back to sub only if rcvd >=0
-					if(lastRcvd >= 0){
+					if(lastRcvd >= 0) {
 						Packet ack = new Packet();
 						ack.type = 1;
 						ack.seqNum = lastRcvd;
-						System.out.println("	lastRcvd: " + lastRcvd + ", ack.seqNum: " + ack.seqNum);
 						sub.send(ack);
 					}
 				}
@@ -176,41 +180,53 @@ public class Rdt implements Runnable {
 
 				//if ack
 				//else if (diff(p.seqNum,sendBase) < diff(sendSeqNum, sendBase) && sendBuf[p.seqNum] != null)
-				else if (now <= sendAgain) {
-					System.out.println("	Received ack packet: p.type: " + p.type + ", p.payload: " + 
-						p.payload + ", p.seqNum: " + p.seqNum + ", expSeqNum: " + expSeqNum);
+				else {
+					//if not timeout
+					if (now <= sendAgain) {
+						System.out.println("	Time left before timeout: " + (sendAgain-now));
 
-					//if seq num == sendBase-1 (with handled wrap around)
-					if (p.seqNum == diff(sendBase, (short)1)) {
-						//System.out.println("Received duplicate ack packet");			
-						dupAcks++;
-						System.out.println("		Duplicate Ack # " + dupAcks);
-					}
-					//if ack seq num within window
-					//else if (diff(p.seqNum, sendBase) < diff(sendSeqNum,sendBase)) { //window size
-					else if (diff(p.seqNum, sendBase) < wSize) {	
-					//if ((diff(p.seqNum,sendBase) < wSize) && diff(p.seqNum,expSeqNum)  >= 0 ) {
-						/*assume all packets between expSeqNum and p.seqNum were correctly received
-						//process conents of the first "if" statement x+1 times
-						//where x+1 = diff(p.seqNum, expSeqNum)*/
-						
-						//Stop the timer
-						timerOn = false;
+						System.out.println("	Received ack packet: p.payload: " + 
+							p.payload + ", p.seqNum: " + p.seqNum + ", expSeqNum: " + expSeqNum);
 
-						int numUpdates = (diff(p.seqNum,sendBase) + 1);
-						System.out.println("	Received ack in window., processing " + 
-							numUpdates + " packets as received from sendBase " + sendBase + 
-							" to p.seqNum " + p.seqNum);
-						for (int x = 0; x < numUpdates; ++x) {
-							sendBuf[sendBase] = null;
-							--numUnacked;
-							System.out.println("	dec Unacked: " + numUnacked);
-							sendBase = incr(sendBase);		
-							expSeqNum = incr(expSeqNum);		
-							dupAcks = 0;
+						//if seq num == sendBase-1 (with handled wrap around)
+						if (p.seqNum == diff(sendBase, (short)1)) {
+							dupAcks++;
+							System.out.println("		Duplicate Ack # " + dupAcks);
 						}
-					}
 
+						//if ack seq num within window
+						else if (diff(p.seqNum, sendBase) < wSize) {
+
+							int numUpdates = (diff(p.seqNum,sendBase)) + 1;
+	
+							System.out.println("	Received ack in window, processing " + 
+								numUpdates + " packets as received from sendBase " + sendBase + 
+								" to p.seqNum " + p.seqNum);	
+							
+							int lastSent = diff(sendSeqNum, (short)1);
+							if ((int) p.seqNum == lastSent) {
+								timerOn = false;
+								System.out.println("Timer : Off");
+							}
+
+
+							for (int x = 0; x < numUpdates; ++x) {
+								sendBuf[sendBase] = null;
+								sendBase = incr(sendBase);		
+								expSeqNum = sendBase;		
+								dupAcks = 0;
+
+								--numUnacked;
+								System.out.println("	dec Unacked: " + numUnacked);
+							}
+							System.out.println("	sendBase after ack updates: " + sendBase);
+
+						}
+
+					}
+					else {
+						System.out.println("now > sendAgain, timeout should occur");
+					}
 				}	
 			}
 			// else if the resend timer has expired,
@@ -244,10 +260,11 @@ public class Rdt implements Runnable {
 				System.out.println("	incr Unacked: " + numUnacked);
 				sendBuf[data.seqNum] = data;	
 				sendSeqNum = incr(sendSeqNum);
-				//sendAgain = now + timeout;
+				sendAgain = now + timeout;
 
 				//start timer
 				timerOn = true;
+				System.out.println("Timer : On");
 
 				if (fromSrc.size() != 0) {
 					System.out.println("	still items in source.");
@@ -273,6 +290,7 @@ public class Rdt implements Runnable {
 
 	public void resend(long now) {
 		int numResend = diff(sendSeqNum, sendBase); //=num of packets to resend
+		dupAcks = 0;
 		
 		System.out.println("	Before Resend: Now: " + now + ", SendAgain: " + sendAgain);		
 
@@ -287,13 +305,23 @@ public class Rdt implements Runnable {
 				System.exit(1);
 			}
 		} 
-
-		for (int i = sendBase; i < sendSeqNum; ++i) {
-			sub.send(sendBuf[i]);
-			System.out.println("	resent packet " + i);
+		short base = sendBase;
+		for (int i = 0; i < numResend; ++i) {
+			sub.send(sendBuf[base]);
+			base = incr(base);
 		}
+		// for (int i = sendBase; i < sendSeqNum; incr(i)) {
+		// 	sub.send(sendBuf[i]);
+		// 	System.out.println("	resent packet " + i);
+		// }
+		sendAgain = now + timeout;
 
 		timerOn = true;
+		System.out.println("Timer : On");
+
+
+
+
 		System.out.println("	After Resend: Now: " + now + ", SendAgain: " + sendAgain);		
 
 	}
