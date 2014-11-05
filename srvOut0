@@ -1,0 +1,251 @@
+/127.0.0.1:11313 received from /127.0.0.1:55415 data[1] testing 1
+	Received data packet: p.payload: testing 1, p.seqNum: 1, expSeqNum: 0
+/127.0.0.1:11313 received from /127.0.0.1:55415 data[2] testing 2
+	Received data packet: p.payload: testing 2, p.seqNum: 2, expSeqNum: 0
+/127.0.0.1:11313 received from /127.0.0.1:55415 data[4] testing 4
+	Received data packet: p.payload: testing 4, p.seqNum: 4, expSeqNum: 0
+/127.0.0.1:11313 received from /127.0.0.1:55415 data[1] testing 1
+/127.0.0.1:11313 received from /127.0.0.1:55415 data[2] testing 2
+/127.0.0.1:11313 received from /127.0.0.1:55415 data[4] testing 4
+	Received data packet: p.payload: testing 1, p.seqNum: 1, expSeqNum: 0
+	Received data packet: p.payload: testing 2, p.seqNum: 2, expSeqNum: 0
+	Received data packet: p.payload: testing 4, p.seqNum: 4, expSeqNum: 0
+/127.0.0.1:11313 received from /127.0.0.1:55415 data[0] testing 0
+/127.0.0.1:11313 received from /127.0.0.1:55415 data[1] testing 1
+/127.0.0.1:11313 received from /127.0.0.1:55415 data[3] testing 3
+/127.0.0.1:11313 received from /127.0.0.1:55415 data[4] testing 4
+	Received data packet: p.payload: testing 0, p.seqNum: 0, expSeqNum: 0
+	packet 0 sent to sink.
+	Received data packet: p.payload: testing 1, p.seqNum: 1, expSeqNum: 1
+	packet 1 sent to sink.
+	Received data packet: p.payload: testing 3, p.seqNum: 3, expSeqNum: 2
+	Received data packet: p.payload: testing 4, p.seqNum: 4, expSeqNum: 2
+/127.0.0.1:11313 sending to /127.0.0.1:55415 ack[0]
+/127.0.0.1:11313 sending to /127.0.0.1:55415 ack[1]
+/127.0.0.1:11313 sending to /127.0.0.1:55415 ack[1]
+/127.0.0.1:11313 sending to /127.0.0.1:55415 ack[1]
+/127.0.0.1:11313 received from /127.0.0.1:55415 data[5] testing 5
+	Received data packet: p.payload: testing 5, p.seqNum: 5, expSeqNum: 2
+/127.0.0.1:11313 sending to /127.0.0.1:55415 ack[1]
+/127.0.0.1:11313 received from /127.0.0.1:55415 data[2] testing 2
+/127.0.0.1:11313 received from /127.0.0.1:55415 data[4] testing 4
+/127.0.0.1:11313 received from /127.0.0.1:55415 data[5] testing 5
+/127.0.0.1:11313 received from /127.0.0.1:55415 data[6] testing 6
+	Received data packet: p.payload: testing 2, p.seqNum: 2, expSeqNum: 2
+	packet 2 sent to sink.
+	Received data packet: p.payload: testing 4, p.seqNum: 4, expSeqNum: 3
+/127.0.0.1:11313 sending to /127.0.0.1:55415 ack[2]
+	Received data packet: p.payload: testing 5, p.seqNum: 5, expSeqNum: 3
+	Received data packet: p.payload: testing 6, p.seqNum: 6, expSeqNum: 3
+/127.0.0.1:11313 sending to /127.0.0.1:55415 ack[2]
+/127.0.0.1:11313 sending to /127.0.0.1:55415 ack[2]
+discarding ack[2]
+/127.0.0.1:11313 received from /127.0.0.1:55415 data[7] testing 7
+	Received data packet: p.payload: testing 7, p.seqNum: 7, expSeqNum: 3
+/127.0.0.1:11313 sending to /127.0.0.1:55415 ack[2]
+/127.0.0.1:11313 received from /127.0.0.1:55415 data[3] testing 3
+	Received data packet: p.payload: testing 3, p.seqNum: 3, expSeqNum: 3
+/127.0.0.1:11313 received from /127.0.0.1:55415 data[5] testing 5
+	packet 3 sent to sink.
+	Received data packet: p.payload: testing 5, p.seqNum: 5, expSeqNum: 4
+/127.0.0.1:11313 sending to /127.0.0.1:55415 ack[3]
+/127.0.0.1:11313 received from /127.0.0.1:55415 data[6] testing 6
+/127.0.0.1:11313 sending to /127.0.0.1:55415 ack[3]
+/127.0.0.1:11313 received from /127.0.0.1:55415 data[7] testing 7
+	Received data packet: p.payload: testing 6, p.seqNum: 6, expSeqNum: 4
+	Received data packet: p.payload: testing 7, p.seqNum: 7, expSeqNum: 4
+/127.0.0.1:11313 sending to /127.0.0.1:55415 ack[3]
+/127.0.0.1:11313 received from /127.0.0.1:55415 data[8] testing 8
+discarding ack[3]
+	Received data packet: p.payload: testing 8, p.seqNum: 8, expSeqNum: 4
+/127.0.0.1:11313 sending to /127.0.0.1:55415 ack[3]
+/127.0.0.1:11313 received from /127.0.0.1:55415 data[4] testing 4
+/127.0.0.1:11313 received from /127.0.0.1:55415 data[5] testing 5
+/127.0.0.1:11313 received from /127.0.0.1:55415 data[6] testing 6
+/127.0.0.1:11313 received from /127.0.0.1:55415 data[7] testing 7
+	Received data packet: p.payload: testing 4, p.seqNum: 4, expSeqNum: 4
+	packet 4 sent to sink.
+	Received data packet: p.payload: testing 5, p.seqNum: 5, expSeqNum: 5
+/127.0.0.1:11313 sending to /127.0.0.1:55415 ack[4]
+	packet 5 sent to sink.
+discarding ack[5]
+	Received data packet: p.payload: testing 6, p.seqNum: 6, expSeqNum: 6
+	packet 6 sent to sink.
+	Received data packet: p.payload: testing 7, p.seqNum: 7, expSeqNum: 7
+/127.0.0.1:11313 sending to /127.0.0.1:55415 ack[6]
+	packet 7 sent to sink.
+/127.0.0.1:11313 sending to /127.0.0.1:55415 ack[7]
+/127.0.0.1:11313 received from /127.0.0.1:55415 data[9] testing 9
+	Received data packet: p.payload: testing 9, p.seqNum: 9, expSeqNum: 8
+/127.0.0.1:11313 sending to /127.0.0.1:55415 ack[7]
+/127.0.0.1:11313 received from /127.0.0.1:55415 data[8] testing 8
+/127.0.0.1:11313 received from /127.0.0.1:55415 data[9] testing 9
+	Received data packet: p.payload: testing 8, p.seqNum: 8, expSeqNum: 8
+	packet 8 sent to sink.
+	Received data packet: p.payload: testing 9, p.seqNum: 9, expSeqNum: 9
+	packet 9 sent to sink.
+/127.0.0.1:11313 sending to /127.0.0.1:55415 ack[8]
+discarding ack[9]
+
+	Msg from src ready to be sent: testing 0
+	incr Unacked: 1
+Timer : On
+	fromSrc is now empty.
+/127.0.0.1:11313 sending to /127.0.0.1:55415 data[0] testing 0
+
+	Msg from src ready to be sent: testing 1
+	incr Unacked: 2
+Timer : On
+	fromSrc is now empty.
+/127.0.0.1:11313 sending to /127.0.0.1:55415 data[1] testing 1
+
+	Msg from src ready to be sent: testing 2
+	incr Unacked: 3
+Timer : On
+	fromSrc is now empty.
+/127.0.0.1:11313 sending to /127.0.0.1:55415 data[2] testing 2
+/127.0.0.1:11313 received from /127.0.0.1:55415 data[9] testing 9
+	Received data packet: p.payload: testing 9, p.seqNum: 9, expSeqNum: 0
+/127.0.0.1:11313 sending to /127.0.0.1:55415 ack[9]
+
+	Msg from src ready to be sent: testing 3
+	incr Unacked: 4
+Timer : On
+	fromSrc is now empty.
+/127.0.0.1:11313 sending to /127.0.0.1:55415 data[3] testing 3
+
+	Msg from src ready to be sent: testing 4
+	incr Unacked: 5
+Timer : On
+	fromSrc is now empty.
+discarding data[4] testing 4
+exceeded timer.
+	Timeout occured: resend packets in sendBuf.
+	Before Resend: Now: 3703331000, SendAgain: 3702592000
+	Begin resending 5 packets from sendBase: 0 to sendSeqNum: 5
+Timer : On
+discarding data[0] testing 0
+	After Resend: Now: 3703331000, SendAgain: 4203331000
+/127.0.0.1:11313 sending to /127.0.0.1:55415 data[1] testing 1
+/127.0.0.1:11313 sending to /127.0.0.1:55415 data[2] testing 2
+discarding data[3] testing 3
+/127.0.0.1:11313 sending to /127.0.0.1:55415 data[4] testing 4
+exceeded timer.
+	Timeout occured: resend packets in sendBuf.
+	Before Resend: Now: 4203728000, SendAgain: 4203331000
+	Begin resending 5 packets from sendBase: 0 to sendSeqNum: 5
+Timer : On
+/127.0.0.1:11313 sending to /127.0.0.1:55415 data[0] testing 0
+	After Resend: Now: 4203728000, SendAgain: 4703728000
+discarding data[1] testing 1
+/127.0.0.1:11313 sending to /127.0.0.1:55415 data[2] testing 2
+/127.0.0.1:11313 sending to /127.0.0.1:55415 data[3] testing 3
+discarding data[4] testing 4
+/127.0.0.1:11313 received from /127.0.0.1:55415 ack[0]
+/127.0.0.1:11313 received from /127.0.0.1:55415 ack[0]
+	Time left before timeout: 497197000
+	Received ack packet: p.payload: , p.seqNum: 0, expSeqNum: 0
+	Received ack in window, processing 1 packets as received from sendBase 0 to p.seqNum 0
+	dec Unacked: 4
+	sendBase after ack updates: 1
+	Time left before timeout: 496932000
+	Received ack packet: p.payload: , p.seqNum: 0, expSeqNum: 1
+		Duplicate Ack # 1
+
+	Msg from src ready to be sent: testing 5
+	incr Unacked: 5
+Timer : On
+	fromSrc is now empty.
+/127.0.0.1:11313 sending to /127.0.0.1:55415 data[5] testing 5
+/127.0.0.1:11313 received from /127.0.0.1:55415 ack[0]
+	Time left before timeout: 498655000
+	Received ack packet: p.payload: , p.seqNum: 0, expSeqNum: 1
+		Duplicate Ack # 2
+exceeded timer.
+	Timeout occured: resend packets in sendBuf.
+	Before Resend: Now: 4707395000, SendAgain: 4706913000
+	Begin resending 5 packets from sendBase: 1 to sendSeqNum: 6
+Timer : On
+/127.0.0.1:11313 sending to /127.0.0.1:55415 data[1] testing 1
+	After Resend: Now: 4707395000, SendAgain: 5207395000
+discarding data[2] testing 2
+/127.0.0.1:11313 sending to /127.0.0.1:55415 data[3] testing 3
+/127.0.0.1:11313 sending to /127.0.0.1:55415 data[4] testing 4
+discarding data[5] testing 5
+exceeded timer.
+	Timeout occured: resend packets in sendBuf.
+	Before Resend: Now: 5207525000, SendAgain: 5207395000
+	Begin resending 5 packets from sendBase: 1 to sendSeqNum: 6
+discarding data[1] testing 1
+Timer : On
+discarding data[2] testing 2
+	After Resend: Now: 5207525000, SendAgain: 5707525000
+/127.0.0.1:11313 sending to /127.0.0.1:55415 data[3] testing 3
+/127.0.0.1:11313 sending to /127.0.0.1:55415 data[4] testing 4
+/127.0.0.1:11313 sending to /127.0.0.1:55415 data[5] testing 5
+/127.0.0.1:11313 received from /127.0.0.1:55415 ack[1]
+/127.0.0.1:11313 received from /127.0.0.1:55415 ack[1]
+/127.0.0.1:11313 received from /127.0.0.1:55415 ack[1]
+	Time left before timeout: 497158000
+	Received ack packet: p.payload: , p.seqNum: 1, expSeqNum: 1
+	Received ack in window, processing 1 packets as received from sendBase 1 to p.seqNum 1
+	dec Unacked: 4
+	sendBase after ack updates: 2
+	Time left before timeout: 496887000
+	Received ack packet: p.payload: , p.seqNum: 1, expSeqNum: 2
+		Duplicate Ack # 1
+	Time left before timeout: 496777000
+	Received ack packet: p.payload: , p.seqNum: 1, expSeqNum: 2
+		Duplicate Ack # 2
+exceeded timer.
+	Timeout occured: resend packets in sendBuf.
+	Before Resend: Now: 5708263000, SendAgain: 5707525000
+	Begin resending 4 packets from sendBase: 2 to sendSeqNum: 6
+Timer : On
+	After Resend: Now: 5708263000, SendAgain: 6208263000
+/127.0.0.1:11313 sending to /127.0.0.1:55415 data[2] testing 2
+/127.0.0.1:11313 sending to /127.0.0.1:55415 data[3] testing 3
+/127.0.0.1:11313 sending to /127.0.0.1:55415 data[4] testing 4
+discarding data[5] testing 5
+/127.0.0.1:11313 received from /127.0.0.1:55415 ack[2]
+	Time left before timeout: 496889000
+	Received ack packet: p.payload: , p.seqNum: 2, expSeqNum: 2
+	Received ack in window, processing 1 packets as received from sendBase 2 to p.seqNum 2
+	dec Unacked: 3
+	sendBase after ack updates: 3
+exceeded timer.
+	Timeout occured: resend packets in sendBuf.
+	Before Resend: Now: 6209293000, SendAgain: 6208263000
+	Begin resending 3 packets from sendBase: 3 to sendSeqNum: 6
+Timer : On
+	After Resend: Now: 6209293000, SendAgain: 6709293000
+/127.0.0.1:11313 sending to /127.0.0.1:55415 data[3] testing 3
+/127.0.0.1:11313 sending to /127.0.0.1:55415 data[4] testing 4
+/127.0.0.1:11313 sending to /127.0.0.1:55415 data[5] testing 5
+/127.0.0.1:11313 received from /127.0.0.1:55415 ack[4]
+/127.0.0.1:11313 received from /127.0.0.1:55415 ack[4]
+/127.0.0.1:11313 received from /127.0.0.1:55415 ack[5]
+	Time left before timeout: 497387000
+	Received ack packet: p.payload: , p.seqNum: 4, expSeqNum: 3
+	Received ack in window, processing 2 packets as received from sendBase 3 to p.seqNum 4
+	dec Unacked: 2
+	dec Unacked: 1
+	sendBase after ack updates: 5
+	Time left before timeout: 497145000
+	Received ack packet: p.payload: , p.seqNum: 4, expSeqNum: 5
+		Duplicate Ack # 1
+	Time left before timeout: 497039000
+	Received ack packet: p.payload: , p.seqNum: 5, expSeqNum: 5
+	Received ack in window, processing 1 packets as received from sendBase 5 to p.seqNum 5
+Timer : Off
+	dec Unacked: 0
+	sendBase after ack updates: 6
+  Sender: sent 33 data packets, 23 acks
+          discarded 10 data packets, 4 acks
+          runLength 4.094557
+Receiver: received 29 data packets, 10 acks
+          discarded 0 arrivals 
+          runLength 5.205293
+End of while loop: quit = true, numUnacked = 0
+  SrcSnk: sent 6, received 10
+          runLength 0.3

@@ -186,7 +186,7 @@ public class Rdt implements Runnable {
 						System.out.println("	Time left before timeout: " + (sendAgain-now));
 
 						System.out.println("	Received ack packet: p.payload: " + 
-							p.payload + ", p.seqNum: " + p.seqNum + ", expSeqNum: " + expSeqNum);
+							p.payload + ", p.seqNum: " + p.seqNum + ", expAck: " + sendBase);
 
 						//if seq num == sendBase-1 (with handled wrap around)
 						if (p.seqNum == diff(sendBase, (short)1)) {
@@ -213,7 +213,7 @@ public class Rdt implements Runnable {
 							for (int x = 0; x < numUpdates; ++x) {
 								sendBuf[sendBase] = null;
 								sendBase = incr(sendBase);		
-								expSeqNum = sendBase;		
+								//expSeqNum = sendBase;		
 								dupAcks = 0;
 
 								--numUnacked;
@@ -225,7 +225,7 @@ public class Rdt implements Runnable {
 
 					}
 					else {
-						System.out.println("now > sendAgain, timeout should occur");
+						//System.out.println("now > sendAgain, timeout should occur");
 					}
 				}	
 			}
